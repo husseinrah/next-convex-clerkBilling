@@ -22,7 +22,7 @@ export const sendEmail = action({
     // Send the email
     await resend.sendEmail(ctx, {
       from: "My Starter Kit <onboarding@resend.dev>",
-      to: "milanhenn09@gmail.com",
+      to: "user@example.com",
       subject: "Welcome to My Starter Kit! 🚀",
       html,
     });

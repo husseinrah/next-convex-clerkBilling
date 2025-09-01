@@ -24,7 +24,7 @@ export async function POST(req: Request) {
             userMessage: latestUserMessage.content,
             userName: "Chat User", // You can get this from auth context
             assistantResponse: finishResult.text,
-            userEmail: "milanhenn09@gmail.com", // You can get this from auth context
+            userEmail: "user@example.com", // You can get this from auth context
           });
         } catch (error) {
           console.error("Failed to send chat notification email:", error);

@@ -11,7 +11,7 @@ export const sendTestEmail = internalMutation({
   handler: async (ctx) => {
     await resend.sendEmail(ctx, {
       from: "Acme <onboarding@resend.dev>",
-      to: "milanhenn09@gmail.com",
+      to: "user@example.com",
       subject: "Hi there",
       html: "This is a test email",
     });
