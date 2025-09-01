@@ -26,7 +26,6 @@ export const handleEmailEvent = internalMutation({
   handler: async (ctx, args): Promise<null> => {
     // Handle however you want
     // args provides { id: EmailId; event: EmailEvent; }
-    // see /example/example.ts
     console.log("Got called back!", args.id, args.event);
     return null;
   },

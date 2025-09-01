@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openai("gpt-4o"),
     messages,
-    /*
+
     onFinish: async (finishResult) => {
       // Send email notification after AI response is complete
       if (latestUserMessage && finishResult.text) {
@@ -32,7 +32,6 @@ export async function POST(req: Request) {
         }
       }
     },
-    */
   });
 
   return result.toTextStreamResponse();

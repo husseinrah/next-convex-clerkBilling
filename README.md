@@ -4,7 +4,7 @@ A modern full-stack starter template with authentication, real-time database, an
 
 ## 🚀 Features
 
-- **Next.js 14** with App Router and TypeScript
+- **Next.js 15** with App Router and TypeScript
 - **Convex** for real-time backend and database
 - **Clerk** for authentication and user management
 - **Billing Integration** with payment processing
@@ -35,12 +35,14 @@ A modern full-stack starter template with authentication, real-time database, an
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
-   git clone <your-repo-url>
-   cd my-starter-kit
+   git clone https://github.com/husseinrah/next-convex-clerkBilling.git
+   cd next-convex-clerkBilling
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -50,12 +52,13 @@ A modern full-stack starter template with authentication, real-time database, an
    ```
 
 3. **Set up environment variables**
-   
+
    Copy the example environment file:
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Fill in your actual values in `.env.local`:
    - Get Convex keys from [convex.dev](https://convex.dev)
    - Get Clerk keys from [clerk.com](https://clerk.com)
@@ -63,32 +66,37 @@ A modern full-stack starter template with authentication, real-time database, an
    - Get Resend API key from [resend.com](https://resend.com)
 
 4. **Set up Convex**
+
    ```bash
    npx convex dev
    ```
 
 5. **Run the development server**
+
    ```bash
    npm run dev
    ```
 
 6. **Open your browser**
-   
+
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 🔧 Configuration
 
 ### Convex Setup
+
 1. Create a new project at [convex.dev](https://convex.dev)
 2. Run `npx convex dev` and follow the setup wizard
 3. Your Convex URL will be automatically added to your environment
 
 ### Clerk Setup
+
 1. Create a new application at [clerk.com](https://clerk.com)
 2. Configure your sign-in/sign-up redirects to `/dashboard`
 3. Add your Clerk keys to `.env.local`
 
 ### OpenAI Setup (Optional)
+
 1. Get an API key from [openai.com](https://openai.com)
 2. Add it to your `.env.local` for AI chat functionality
 
@@ -111,13 +119,16 @@ A modern full-stack starter template with authentication, real-time database, an
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
+
 1. Push your code to GitHub
 2. Connect your repository to [Vercel](https://vercel.com)
 3. Add your environment variables in Vercel dashboard
 4. Deploy!
 
 ### Other Platforms
+
 This project can be deployed to any platform that supports Next.js, such as:
+
 - Netlify
 - Railway
 - Render
@@ -133,15 +144,8 @@ This project can be deployed to any platform that supports Next.js, such as:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-If you have any questions or need help, please:
-1. Check the [documentation](docs/)
-2. Open an issue on GitHub
-3. Join our [Discord community](link-to-discord)
+This project is licensed under the MIT License
 
 ---
 
-Made with ❤️ by [Your Name]
+Made with ❤️
