@@ -1,0 +1,313 @@
+---
+description: Project-specific rules for Next.js + Convex + Clerk Billing Starter Kit
+globs: "**/*.{ts,tsx,js,jsx,md,json}"
+---
+
+# Next.js + Convex + Clerk Billing Starter Kit - Project Rules
+
+## 🏗️ Project Architecture Overview
+
+This is a modern full-stack SaaS starter template that combines:
+- **Frontend**: Next.js 15 with App Router, TypeScript, and Tailwind CSS
+- **Backend**: Convex for real-time database and serverless functions
+- **Authentication**: Clerk for user management and auth flows
+- **Billing**: Payment processing with webhook integration
+- **UI**: shadcn/ui components with modern design system
+- **AI Integration**: OpenAI chat functionality with email notifications
+
+## 📁 Project Structure & Conventions
+
+### Core Directories
+```
+app/                     # Next.js App Router pages and API routes
+├── api/chat/           # AI chat API endpoint
+├── dashboard/          # Protected dashboard area
+│   ├── chat/          # AI chat interface
+│   └── payment-gated/ # Premium features
+components/             # Reusable React components
+├── providers/         # Context providers (Convex, Clerk, Theme)
+├── ui/               # shadcn/ui base components
+└── logos/            # Brand assets
+convex/               # Convex backend functions and schema
+├── auth.config.ts    # Clerk authentication configuration
+├── schema.ts         # Database schema definitions
+├── users.ts          # User management functions
+├── paymentAttempts.ts # Billing and payment handling
+└── emails/           # Email template components
+```
+
+### File Naming Conventions
+- **Components**: PascalCase (`UserProfile.tsx`)
+- **Pages**: kebab-case (`payment-gated/`)
+- **Utilities**: camelCase (`utils.ts`)
+- **Convex functions**: camelCase with descriptive names (`savePaymentAttempt`)
+- **Types**: PascalCase with Type/Interface suffix (`PaymentAttemptData`)
+
+## 🔐 Authentication & User Management
+
+### Clerk Integration Pattern
+```typescript
+// Always use Clerk middleware for route protection
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+});
+```
+
+### User Sync Pattern
+- Users are automatically synced between Clerk and Convex
+- Clerk serves as the source of truth for authentication
+- Convex stores additional user data and relationships
+- Use `externalId` field to link Clerk users to Convex users
+
+```typescript
+// Standard user lookup pattern
+export async function getCurrentUser(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  return await userByExternalId(ctx, identity.subject);
+}
+```
+
+## 💳 Billing & Payment System
+
+### Payment Attempt Schema
+The billing system tracks payment attempts with detailed metadata:
+- User linking via `userId` field (optional, for guest payments)
+- Comprehensive payment status tracking
+- Subscription item details with pricing information
+- Failed payment reason tracking
+
+### Webhook Integration Pattern
+```typescript
+// Always use internalMutation for webhook handlers
+export const savePaymentAttempt = internalMutation({
+  args: { paymentAttemptData: paymentAttemptDataValidator },
+  handler: async (ctx, { paymentAttemptData }) => {
+    // 1. Find user by external ID
+    // 2. Check for existing payment attempt
+    // 3. Upsert payment data
+  },
+});
+```
+
+## 🎨 UI/UX Guidelines
+
+### Component Architecture
+- Use shadcn/ui as the base component library
+- Compose complex components from primitive UI components
+- Maintain consistent spacing using Tailwind utilities
+- Support both light and dark themes via next-themes
+
+### Layout Patterns
+```tsx
+// Standard dashboard layout with sidebar
+<SidebarProvider>
+  <AppSidebar />
+  <SidebarInset>
+    <SiteHeader />
+    <main>{children}</main>
+  </SidebarInset>
+</SidebarProvider>
+```
+
+### Data Display Patterns
+- Use `DataTable` for tabular data with sorting/filtering
+- Use `ChartAreaInteractive` for analytics visualization
+- Use `SectionCards` for dashboard metrics overview
+
+## 🤖 AI Integration
+
+### Chat API Pattern
+```typescript
+// Standard chat API with Convex integration
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  
+  const result = streamText({
+    model: openai("gpt-4o"),
+    messages,
+    onFinish: async (finishResult) => {
+      // Send email notification via Convex
+      await convex.action(api.emailTemplates.sendChatNotificationEmail, {
+        // email data
+      });
+    },
+  });
+  
+  return result.toTextStreamResponse();
+}
+```
+
+### Frontend Chat Implementation
+- Use `@ai-sdk/react` for chat state management
+- Implement real-time messaging with proper error handling
+- Support markdown rendering for AI responses
+- Include model selection functionality
+
+## 📧 Email System
+
+### Email Template Pattern
+Use React Email components for consistent styling:
+```tsx
+// All email templates should use @react-email/components
+import { Html, Head, Body, Container, Text } from "@react-email/components";
+
+export function WelcomeEmail({ userName }: { userName: string }) {
+  return (
+    <Html>
+      <Head />
+      <Body>
+        <Container>
+          <Text>Welcome, {userName}!</Text>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+```
+
+## 🛠️ Development Workflows
+
+### Adding New Features
+1. **Database Changes**: Update `convex/schema.ts` first
+2. **Backend Logic**: Create Convex functions in appropriate files
+3. **Frontend Components**: Build UI components in `components/`
+4. **Page Integration**: Add pages in `app/` directory
+5. **Route Protection**: Update middleware if needed
+
+### Database Schema Updates
+```typescript
+// Always use proper validators and indexes
+export default defineSchema({
+  newTable: defineTable({
+    field: v.string(),
+    userId: v.id("users"),
+  })
+  .index("byUserId", ["userId"])
+  .index("byField", ["field"]),
+});
+```
+
+### Component Development
+1. Start with shadcn/ui primitives
+2. Add business logic and state management
+3. Ensure responsive design
+4. Test both light and dark themes
+5. Add proper TypeScript types
+
+## 🔄 State Management Patterns
+
+### Convex Query Pattern
+```typescript
+// Use Convex hooks for real-time data
+function MyComponent() {
+  const data = useQuery(api.myModule.myQuery, { arg: value });
+  const mutate = useMutation(api.myModule.myMutation);
+  
+  if (data === undefined) return <LoadingSpinner />;
+  // Component logic
+}
+```
+
+### Form Handling
+- Use controlled components for form inputs
+- Implement proper validation before mutations
+- Show loading states during submissions
+- Handle errors gracefully with user feedback
+
+## 🚀 Deployment Considerations
+
+### Environment Variables
+Required environment variables:
+- `NEXT_PUBLIC_CONVEX_URL`: Convex deployment URL
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk public key
+- `CLERK_SECRET_KEY`: Clerk secret key
+- `OPENAI_API_KEY`: OpenAI API key for chat functionality
+- `RESEND_API_KEY`: Resend API key for emails
+
+### Performance Optimization
+- Use Next.js Image component for optimized images
+- Implement proper loading states for Convex queries
+- Use React.memo for expensive components
+- Leverage Convex's real-time subscriptions efficiently
+
+## 🧪 Testing Strategy
+
+### Component Testing
+- Test user interactions and state changes
+- Mock Convex hooks for unit tests
+- Test both authenticated and unauthenticated states
+
+### Integration Testing
+- Test complete user flows (signup → dashboard → billing)
+- Verify webhook handling and payment processing
+- Test email delivery and content
+
+## 📚 Code Examples
+
+### Standard Page Component
+```tsx
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
+export default function DashboardPage() {
+  const user = useQuery(api.users.current);
+  
+  if (user === undefined) return <LoadingSpinner />;
+  if (user === null) return <SignInButton />;
+  
+  return (
+    <div className="container mx-auto py-6">
+      <h1>Welcome, {user.name}</h1>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+### Convex Function Template
+```typescript
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+import { getCurrentUserOrThrow } from "./users";
+
+export const myQuery = query({
+  args: { param: v.string() },
+  returns: v.array(v.object({ field: v.string() })),
+  handler: async (ctx, { param }) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    // Query logic
+  },
+});
+
+export const myMutation = mutation({
+  args: { data: v.object({ field: v.string() }) },
+  returns: v.id("myTable"),
+  handler: async (ctx, { data }) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    return await ctx.db.insert("myTable", {
+      ...data,
+      userId: user._id,
+    });
+  },
+});
+```
+
+## 🎯 Best Practices Summary
+
+1. **Always authenticate users** before accessing protected resources
+2. **Use TypeScript strictly** with proper type definitions
+3. **Follow Convex patterns** for database operations and real-time updates
+4. **Implement proper error handling** with user-friendly messages
+5. **Maintain responsive design** across all screen sizes
+6. **Test thoroughly** before deploying new features
+7. **Keep components focused** with single responsibility principle
+8. **Use semantic HTML** and proper accessibility practices
+9. **Optimize performance** with appropriate loading patterns
+10. **Document complex business logic** with clear comments

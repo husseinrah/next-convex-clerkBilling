@@ -1,0 +1,211 @@
+Next.js + Convex + Clerk Billing Starter Kit - Development Rules
+
+PROJECT OVERVIEW
+================
+This is a modern full-stack SaaS starter template combining Next.js 15, Convex real-time backend, Clerk authentication, and integrated billing. The project demonstrates production-ready patterns for building scalable web applications.
+
+CORE ARCHITECTURE
+=================
+- Frontend: Next.js 15 with App Router, TypeScript, Tailwind CSS
+- Backend: Convex for real-time database and serverless functions  
+- Authentication: Clerk for user management and auth flows
+- UI: shadcn/ui components with dark/light theme support
+- AI: OpenAI integration with streaming chat responses
+- Email: Resend for transactional emails with React Email templates
+- Billing: Webhook-based payment processing with detailed tracking
+
+FOLDER STRUCTURE
+================
+app/                     # Next.js App Router pages and API routes
+├── api/chat/           # AI chat API endpoint with OpenAI integration
+├── dashboard/          # Protected dashboard area (requires auth)
+│   ├── chat/          # AI chat interface page
+│   └── payment-gated/ # Premium features requiring subscription
+components/             # Reusable React components
+├── providers/         # Context providers (Convex, Clerk, Theme)
+├── ui/               # shadcn/ui base components
+└── logos/            # Brand assets and logo components
+convex/               # Convex backend functions and schema
+├── auth.config.ts    # Clerk authentication configuration
+├── schema.ts         # Database schema with users and paymentAttempts tables
+├── users.ts          # User management functions and queries
+├── paymentAttempts.ts # Billing and payment webhook handlers
+├── emails/           # React Email template components
+└── emailTemplates.tsx # Email sending functions
+
+DATABASE SCHEMA
+===============
+users table:
+- name: string (full name from Clerk)
+- externalId: string (Clerk user ID, indexed for lookups)
+
+paymentAttempts table:
+- payment_id: string (unique payment identifier)
+- status: string (payment status: pending, paid, failed)
+- payer: object (user_id, email, first_name, last_name)
+- payment_source: object (card_type, last4)
+- subscription_items: array (plan details, amounts, periods)
+- totals: object (grand_total, subtotal, tax_total with amounts)
+- userId: optional Id<"users"> (link to users table)
+- billing_date, created_at, updated_at: number timestamps
+- failed_reason: optional object (code, decline_code)
+
+AUTHENTICATION PATTERNS
+========================
+Route Protection:
+- Use clerkMiddleware with createRouteMatcher for protecting /dashboard routes
+- Public routes: landing page, auth flows
+- Protected routes: /dashboard/* (requires authentication)
+- Payment-gated routes: /dashboard/payment-gated/* (requires subscription)
+
+User Management:
+- Clerk serves as source of truth for authentication
+- Users synced to Convex via webhooks using internalMutation functions
+- Use externalId field to link Clerk users to Convex users
+- Standard pattern: getCurrentUser() and getCurrentUserOrThrow() helpers
+
+CONVEX FUNCTION PATTERNS
+========================
+Always use new function syntax with explicit args and returns validators:
+
+query({
+  args: { param: v.string() },
+  returns: v.array(v.object({ field: v.string() })),
+  handler: async (ctx, { param }) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    // Query logic
+  },
+});
+
+mutation({
+  args: { data: v.object({ field: v.string() }) },
+  returns: v.id("tableName"),
+  handler: async (ctx, { data }) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    return await ctx.db.insert("tableName", { ...data, userId: user._id });
+  },
+});
+
+Use internalMutation for webhook handlers and sensitive operations
+Use proper indexing for frequently queried fields (byExternalId, byPaymentId, byUserId)
+
+BILLING INTEGRATION
+===================
+Payment Flow:
+1. User initiates payment through billing provider
+2. Webhook receives payment status updates
+3. savePaymentAttempt function processes and stores data using paymentAttemptDataValidator
+4. UI reflects payment status in real-time via Convex subscriptions
+
+Webhook Pattern:
+- Always use internalMutation for webhook handlers
+- Check for existing records to avoid duplicates
+- Link payments to users via payer.user_id -> externalId lookup
+- Store comprehensive payment metadata for analytics and support
+
+FRONTEND PATTERNS
+=================
+Component Architecture:
+- Use shadcn/ui as base component library
+- Compose complex components from primitive UI components
+- Support both light and dark themes via next-themes
+- Maintain responsive design with mobile-first approach
+
+Data Fetching:
+- Use useQuery hook for Convex data with proper loading states
+- Use useMutation hook for data updates
+- Handle undefined (loading), null (not found), and data states
+- Implement proper error boundaries and error handling
+
+Layout Patterns:
+- Standard dashboard layout: SidebarProvider > AppSidebar + SidebarInset > SiteHeader + main content
+- Use DataTable for tabular data with sorting/filtering
+- Use ChartAreaInteractive for analytics visualization
+- Use SectionCards for dashboard metrics overview
+
+AI CHAT IMPLEMENTATION
+======================
+Frontend:
+- Use @ai-sdk/react useChat hook for state management
+- Support streaming responses with real-time UI updates
+- Include model selection functionality (GPT-4o, Claude)
+- Implement proper error handling and loading states
+
+Backend:
+- Use streamText from ai SDK with OpenAI provider
+- Implement onFinish callback for post-processing (email notifications)
+- Return streamText.toTextStreamResponse() for proper streaming
+- Use ConvexHttpClient for calling Convex actions from API routes
+
+EMAIL SYSTEM
+============
+Template Management:
+- Use React Email components for consistent styling
+- Store templates in convex/emails/ directory
+- Support both HTML and plain text versions
+- Use @react-email/components for layout and styling
+
+Sending Pattern:
+- Use Convex internalAction for email sending
+- Call email actions from API routes or other Convex functions
+- Include proper error handling and retry logic
+- Send notifications for chat interactions, user events, billing updates
+
+DEVELOPMENT WORKFLOW
+====================
+Adding New Features:
+1. Update convex/schema.ts with new tables/fields
+2. Create Convex functions in appropriate files
+3. Build UI components in components/ directory
+4. Add pages in app/ directory with proper routing
+5. Update middleware for route protection if needed
+6. Add proper TypeScript types and validators
+
+Code Standards:
+- Use TypeScript strict mode with proper typing
+- Follow kebab-case for pages, PascalCase for components
+- Use camelCase for functions, UPPER_SNAKE_CASE for constants
+- Implement proper error handling with user-friendly messages
+- Test across device sizes and both light/dark themes
+
+Performance Optimization:
+- Use Next.js Image component for optimized images
+- Implement proper loading states for Convex queries
+- Use React.memo for expensive components
+- Leverage Convex real-time subscriptions efficiently
+- Implement code splitting for heavy components
+
+SECURITY CONSIDERATIONS
+=======================
+- Always verify user authentication in mutations using getCurrentUserOrThrow
+- Use Convex validators for all function arguments
+- Sanitize user input on both client and server
+- Never expose sensitive data in client queries
+- Use internalMutation/internalAction for sensitive operations
+- Implement proper audit logging for critical operations
+
+ENVIRONMENT VARIABLES
+=====================
+Required for deployment:
+- NEXT_PUBLIC_CONVEX_URL: Convex deployment URL
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: Clerk public key  
+- CLERK_SECRET_KEY: Clerk secret key for backend operations
+- OPENAI_API_KEY: OpenAI API key for chat functionality
+- RESEND_API_KEY: Resend API key for email delivery
+- CLERK_JWT_ISSUER_DOMAIN: For production Clerk configuration
+
+TESTING STRATEGY
+================
+Component Testing:
+- Test user interactions and state changes
+- Mock Convex hooks for unit tests
+- Test both authenticated and unauthenticated states
+- Verify responsive design and theme switching
+
+Integration Testing:
+- Test complete user flows (signup → dashboard → billing → chat)
+- Verify webhook handling and payment processing
+- Test email delivery and template rendering
+- Verify real-time updates work correctly across components
+
+This starter kit provides a solid foundation for building modern SaaS applications. Follow these patterns and guidelines to maintain code quality and ensure scalable architecture as your application grows.
